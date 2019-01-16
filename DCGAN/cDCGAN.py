@@ -21,7 +21,7 @@ import imageio
 from IPython import display
 from plot import plot
 
-imagenames = ['circle', 'square']
+imagenames = ['cloud', 'envelope']
 
 LABEL_NUM = len(imagenames)
 ONE_LABEL_SAMPLE = 100000 // LABEL_NUM
@@ -205,6 +205,9 @@ def generate_and_save_images(model, epoch, test_input, test_label):
         
   plt.savefig('imgs/image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
+
+GEN_TIME = 1
+DISC_TIME = 1
    
 def train(dataset, epochs, noise_dim):  
     
@@ -221,29 +224,37 @@ def train(dataset, epochs, noise_dim):
       for i in range(5):
         print(labels[i])
       '''
-    
+      
+      gen_time = GEN_TIME
+      disc_time = DISC_TIME
+
       # generating noise from a uniform distribution
       noise = tf.random_normal([labels.shape[0], noise_dim])
-      
-      with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-        #print(images.shape, labels.shape)
-        generated_images = generator(noise, labels, training=True)
-      
-        real_output = discriminator(images, labels, training=True)
-        generated_output = discriminator(generated_images, labels, training=True)
-        
-        gen_loss = generator_loss(generated_output)
-        [real_loss, fake_loss] = discriminator_loss(real_output, generated_output)
-        disc_loss = real_loss + fake_loss
-        
-        gen_loss_record.append(gen_loss.numpy())
-        disc_loss_record.append((disc_loss).numpy())
-        
-      gradients_of_generator = gen_tape.gradient(gen_loss, generator.variables)
-      gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.variables)
-      
-      generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.variables))
-      discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.variables))
+      for tot_time in range(999999):
+        with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+          #print(images.shape, labels.shape)
+          generated_images = generator(noise, labels, training=True)
+          generated_output = discriminator(generated_images, labels, training=True)
+          gen_loss = generator_loss(generated_output)
+          gen_loss_record.append(gen_loss.numpy())
+          if disc_time > 0:
+            real_output = discriminator(images, labels, training=True)
+            [real_loss, fake_loss] = discriminator_loss(real_output, generated_output)
+            disc_loss = real_loss + fake_loss
+            disc_loss_record.append((disc_loss).numpy())
+        if gen_time > 0:
+          gradients_of_generator = gen_tape.gradient(gen_loss, generator.variables)
+          generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.variables))
+          gen_time -= 1
+
+        if disc_time > 0:
+          gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.variables)
+          discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.variables))
+          disc_time -= 1
+
+        if gen_time == 0 and disc_time == 0:
+          break
+ 
       
       index += 1
       if index%20 == 0: 
