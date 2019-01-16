@@ -54,6 +54,7 @@ class Generator(tf.keras.Model):
   def __init__(self):
     super(Generator, self).__init__()
     self.fc1 = tf.keras.layers.Dense(7*7*64, use_bias=False)
+    self.fc_label = tf.keras.layers.Dense(7*7*64, use_bias=False)
     self.batchnorm1 = tf.keras.layers.BatchNormalization()
     
     self.conv1 = tf.keras.layers.Conv2DTranspose(64, (5, 5), strides=(1, 1), padding='same', use_bias=False)
@@ -64,22 +65,43 @@ class Generator(tf.keras.Model):
     
     self.conv3 = tf.keras.layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False)
 
-  def call(self, x, training=True):
-    x = self.fc1(x)
-    x = self.batchnorm1(x, training=training)
+  def call(self, x, label, training=True):
+
+    #print(x.shape) 
+    x = self.fc1(x) #(256, 100)
+    label = self.fc_label(label)
+    #print(x.shape)
+    x = self.batchnorm1(x, training=training) 
+    #label = self.batchnorm1(label, training=training) 
+    #print(x.shape)
     x = tf.nn.relu(x)
+    #print(x.shape)
 
     x = tf.reshape(x, shape=(-1, 7, 7, 64))
+    label = tf.reshape(label, shape=(-1, 7, 7, 64))
+    #print(x.shape)
 
     x = self.conv1(x)
+    label = self.conv1(label)
+    #print(x.shape)
     x = self.batchnorm2(x, training=training)
+    #print(x.shape)
     x = tf.nn.relu(x)
+    #print(x.shape)
+    x = tf.concat([x, label], 3) #[256,7,7,64*2]
 
     x = self.conv2(x)
+    label = self.conv2(label)
+    #print(x.shape)
     x = self.batchnorm3(x, training=training)
+    #print(x.shape)
     x = tf.nn.relu(x)
+    #print(x.shape)
 
     x = tf.nn.tanh(self.conv3(x))  
+    print(x.shape)
+    
+    raise(Exception('pass'))
     return x
 
 class Discriminator(tf.keras.Model):
@@ -90,9 +112,16 @@ class Discriminator(tf.keras.Model):
     self.dropout = tf.keras.layers.Dropout(0.3)
     self.flatten = tf.keras.layers.Flatten()
     self.fc1 = tf.keras.layers.Dense(1)
+    self.fc2 = tf.keras.layers.Dense(28*28)
 
-  def call(self, x, training=True):
+  def call(self, x, label, training=True):
+    label = self.fc2(label)
+    label = tf.reshape(label, shape=(-1, 28, 28, 1))
+
     x = tf.nn.leaky_relu(self.conv1(x))
+    label = self.conv1(label)
+    x = tf.concat([x,label], 3)
+    
     x = self.dropout(x, training=training)
     x = tf.nn.leaky_relu(self.conv2(x))
     x = self.dropout(x, training=training)
