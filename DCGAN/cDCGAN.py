@@ -57,14 +57,17 @@ BATCH_SIZE = 256
 
 train_dataset = tf.data.Dataset.from_tensor_slices({'img': train_images, 'label': train_labels}).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
 
+label_dim = 4
+
 class Generator(tf.keras.Model):
   def __init__(self):
     super(Generator, self).__init__()
     self.fc1 = tf.keras.layers.Dense(7*7*64, use_bias=False)
-    self.fc_label = tf.keras.layers.Dense(7*7*64, use_bias=False)
+    self.fc_label = tf.keras.layers.Dense(7*7*label_dim, use_bias=False)
     self.batchnorm1 = tf.keras.layers.BatchNormalization()
     
     self.conv1 = tf.keras.layers.Conv2DTranspose(64, (5, 5), strides=(1, 1), padding='same', use_bias=False)
+    self.convlabel = tf.keras.layers.Conv2DTranspose(label_dim, (5, 5), strides=(1, 1), padding='same', use_bias=False)
     self.batchnorm2 = tf.keras.layers.BatchNormalization()
     
     self.conv2 = tf.keras.layers.Conv2DTranspose(32, (5, 5), strides=(2, 2), padding='same', use_bias=False)
@@ -86,11 +89,11 @@ class Generator(tf.keras.Model):
     #print(x.shape)
 
     x = tf.reshape(x, shape=(-1, 7, 7, 64))
-    label = tf.reshape(label, shape=(-1, 7, 7, 64))
+    label = tf.reshape(label, shape=(-1, 7, 7, label_dim))
     #print(x.shape)
 
     x = self.conv1(x)
-    label = self.conv1(label)
+    label = self.convlabel(label)
     #print(x.shape)
     x = self.batchnorm2(x, training=training)
     #print(x.shape)
@@ -116,6 +119,7 @@ class Discriminator(tf.keras.Model):
   def __init__(self):
     super(Discriminator, self).__init__()
     self.conv1 = tf.keras.layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same')
+    self.convlabel = tf.keras.layers.Conv2D(label_dim, (5, 5), strides=(2, 2), padding='same')
     self.conv2 = tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same')
     self.dropout = tf.keras.layers.Dropout(0.3)
     self.flatten = tf.keras.layers.Flatten()
@@ -128,7 +132,7 @@ class Discriminator(tf.keras.Model):
     label = tf.reshape(label, shape=(-1, 28, 28, 1))
 
     x = tf.nn.leaky_relu(self.conv1(x))
-    label = self.conv1(label)
+    label = self.convlabel(label)
     x = tf.concat([x,label], 3)
     
     x = self.dropout(x, training=training)
