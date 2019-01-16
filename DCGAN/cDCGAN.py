@@ -29,7 +29,7 @@ train_labels = []
 for i in range(len(imagenames)):
     timg = np.load('data/' + imagenames[i] + '.npy')
     tlabel = [i] * len(timg)
-    train_images.push(timg)
+    train_images.append(timg)
     train_labels += tlabel
 
 train_images = np.vstack(train_images)
@@ -45,7 +45,7 @@ train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype('fl
 # We are normalizing the images to the range of [-1, 1]
 train_images = (train_images - 127.5) / 127.5
 
-BUFFER_SIZE = 60000
+BUFFER_SIZE = len(train_images)
 BATCH_SIZE = 256
 
 train_dataset = tf.data.Dataset.from_tensor_slices({'img': train_images, 'label': train_labels}).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
@@ -169,10 +169,11 @@ def train(dataset, epochs, noise_dim):
     for onedata in dataset:
       images = onedata['img']
       labels = onedata['label']
-      print(images.shape(), labels.shape())
+      '''
+      print(images.shape, labels.shape)
       for i in range(5):
-        print(images[i], labels[i])
-
+        print(labels[i])
+      '''
     
       # generating noise from a uniform distribution
       noise = tf.random_normal([BATCH_SIZE, noise_dim])
