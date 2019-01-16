@@ -13,7 +13,8 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 import numpy as np
 
-typename = ['airplane', 'ant', 'apple', 'bat', 'baseball', 'bee', 'bed', 'The Eiffel Tower', 'bicycle', 'axe']
+typename = ['arm', 'baseball']
+#typename = ['airplane', 'ant', 'apple', 'bat', 'baseball', 'bee', 'bed', 'The Eiffel Tower', 'bicycle', 'axe']
 
 def loadquickdrawdata(number = 100):
     filenames = typename
@@ -194,8 +195,8 @@ G_optimizer = optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
 D_optimizer = optim.Adam(D.parameters(), lr=lr / 5, betas=(0.5, 0.999))
 
 # results save folder
-root = 'MNIST_cDCGAN_results/'
-model = 'MNIST_cDCGAN_'
+root = 'test_results/'
+model = 'test_'
 if not os.path.isdir(root):
     os.mkdir(root)
 if not os.path.isdir(root + 'Fixed_results'):
