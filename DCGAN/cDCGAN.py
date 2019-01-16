@@ -24,12 +24,13 @@ from plot import plot
 imagenames = ['circle', 'square']
 
 LABEL_NUM = len(imagenames)
+ONE_LABEL_SAMPLE = 100000 // LABEL_NUM
 
 train_images = []
 train_labels = []
 
 for i in range(len(imagenames)):
-    timg = np.load('data/' + imagenames[i] + '.npy')
+    timg = np.load('data/' + imagenames[i] + '.npy')[:ONE_LABEL_SAMPLE]
     tlabel = [0] * LABEL_NUM
     tlabel[i] = 1
     tlabel = [tlabel] * len(timg)
@@ -73,7 +74,7 @@ class Generator(tf.keras.Model):
 
   def call(self, x, label, training=True):
     label = tf.cast(label, dtype=tf.float32)
-    #print(x.shape) 
+    #print(x.shape, label.shape) 
     x = self.fc1(x) #(256, 100)
 
     label = self.fc_label(label)
@@ -180,11 +181,16 @@ num_examples_to_generate = 16
 # it will be easier to see the improvement of the gan.
 random_vector_for_generation = tf.random_normal([num_examples_to_generate,
                                                  noise_dim])
+random_label_for_generation = []
+for i in range(num_examples_to_generate):
+  random_label_for_generation.append(i % LABEL_NUM)
+random_label_for_generation = tf.constant(random_label_for_generation)
+random_label_for_generation = tf.one_hot(random_label_for_generation, LABEL_NUM, 1, 0)
 
-def generate_and_save_images(model, epoch, test_input):
+def generate_and_save_images(model, epoch, test_input, test_label):
   # make sure the training parameter is set to False because we
   # don't want to train the batchnorm layer when doing inference.
-  predictions = model(test_input, training=False)
+  predictions = model(test_input, test_label, training=False)
 
   fig = plt.figure(figsize=(4,4))
   
@@ -213,9 +219,10 @@ def train(dataset, epochs, noise_dim):
       '''
     
       # generating noise from a uniform distribution
-      noise = tf.random_normal([BATCH_SIZE, noise_dim])
+      noise = tf.random_normal([labels.shape[0], noise_dim])
       
       with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+        #print(images.shape, labels.shape)
         generated_images = generator(noise, labels, training=True)
       
         real_output = discriminator(images, labels, training=True)
@@ -239,11 +246,12 @@ def train(dataset, epochs, noise_dim):
       
     if epoch:
       #display.clear_output(wait=True)
-      plot(epoch, gen_loss_record, 'gen_loss_record_{}'.format(epoch))
-      plot(epoch, disc_loss_record, 'disc_loss_record_{}'.format(epoch))
+      plot(epoch, gen_loss_record, 'gen_loss_record')
+      plot(epoch, disc_loss_record, 'disc_loss_record')
       generate_and_save_images(generator,
                                epoch + 1,
-                               random_vector_for_generation)
+                               random_vector_for_generation,
+                               random_label_for_generation)
       
     
     # saving (checkpoint) the model every 15 epochs
@@ -256,7 +264,8 @@ def train(dataset, epochs, noise_dim):
   display.clear_output(wait=True)
   generate_and_save_images(generator,
                            epochs,
-                           random_vector_for_generation)
+                           random_vector_for_generation,
+                           random_label_for_generation)
   
 train(train_dataset, EPOCHS, noise_dim)
 
@@ -264,12 +273,12 @@ train(train_dataset, EPOCHS, noise_dim)
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 def display_image(epoch_no):
-  return PIL.Image.open('image_at_epoch_{:04d}.png'.format(epoch_no))
+  return PIL.Image.open('imgs/image_at_epoch_{:04d}.png'.format(epoch_no))
 
 display_image(EPOCHS)
 
 with imageio.get_writer('dcgan.gif', mode='I') as writer:
-  filenames = glob.glob('image*.png')
+  filenames = glob.glob('imgs/image*.png')
   filenames = sorted(filenames)
   last = -1
   for i,filename in enumerate(filenames):
