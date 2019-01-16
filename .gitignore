@@ -1,2 +1,8 @@
 data/*
 imgs/*
+data
+DCGAN/data
+DCGAN/data/*
+DCGAN/imgs/*
+DCGAN/training_checkpoints/*
+DCGAN/results/*

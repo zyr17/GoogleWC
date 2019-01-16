@@ -52,7 +52,7 @@ train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype('fl
 train_images = (train_images - 127.5) / 127.5
 
 BUFFER_SIZE = len(train_images)
-BATCH_SIZE = 16
+BATCH_SIZE = 256
 
 train_dataset = tf.data.Dataset.from_tensor_slices({'img': train_images, 'label': train_labels}).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
 
@@ -72,9 +72,7 @@ class Generator(tf.keras.Model):
     self.conv3 = tf.keras.layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False)
 
   def call(self, x, label, training=True):
-    print('xxx')
-    print(x)
-    print(label)
+    label = tf.cast(label, dtype=tf.float32)
     #print(x.shape) 
     x = self.fc1(x) #(256, 100)
 
@@ -100,7 +98,7 @@ class Generator(tf.keras.Model):
     x = tf.concat([x, label], 3) #[256,7,7,64*2]
 
     x = self.conv2(x)
-    label = self.conv2(label)
+    #label = self.conv2(label)
     #print(x.shape)
     x = self.batchnorm3(x, training=training)
     #print(x.shape)
@@ -108,9 +106,9 @@ class Generator(tf.keras.Model):
     #print(x.shape)
 
     x = tf.nn.tanh(self.conv3(x))  
-    print(x.shape)
+    #print(x.shape)
     
-    raise(Exception('pass'))
+    #raise(Exception('pass'))
     return x
 
 class Discriminator(tf.keras.Model):
@@ -124,6 +122,7 @@ class Discriminator(tf.keras.Model):
     self.fc2 = tf.keras.layers.Dense(28*28)
 
   def call(self, x, label, training=True):
+    label = tf.cast(label, dtype = tf.float32)
     label = self.fc2(label)
     label = tf.reshape(label, shape=(-1, 28, 28, 1))
 
@@ -207,17 +206,16 @@ def train(dataset, epochs, noise_dim):
     for onedata in dataset:
       images = onedata['img']
       labels = onedata['label']
-      
+      '''
       print(images.shape, labels.shape)
       for i in range(5):
         print(labels[i])
-      
+      '''
     
       # generating noise from a uniform distribution
       noise = tf.random_normal([BATCH_SIZE, noise_dim])
       
       with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-        print(labels)
         generated_images = generator(noise, labels, training=True)
       
         real_output = discriminator(images, labels, training=True)
