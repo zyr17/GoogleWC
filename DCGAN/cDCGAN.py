@@ -162,7 +162,7 @@ def discriminator_loss(real_output, generated_output):
 
     total_loss = real_loss + generated_loss
 
-    return total_loss
+    return real_loss, generated_loss
 
 def generator_loss(generated_output):
     return tf.losses.sigmoid_cross_entropy(tf.ones_like(generated_output), generated_output)
@@ -233,10 +233,11 @@ def train(dataset, epochs, noise_dim):
         generated_output = discriminator(generated_images, labels, training=True)
         
         gen_loss = generator_loss(generated_output)
-        disc_loss = discriminator_loss(real_output, generated_output)
+        [real_loss, fake_loss] = discriminator_loss(real_output, generated_output)
+        disc_loss = real_loss + fake_loss
         
         gen_loss_record.append(gen_loss.numpy())
-        disc_loss_record.append(disc_loss.numpy())
+        disc_loss_record.append((disc_loss).numpy())
         
       gradients_of_generator = gen_tape.gradient(gen_loss, generator.variables)
       gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.variables)
@@ -246,7 +247,7 @@ def train(dataset, epochs, noise_dim):
       
       index += 1
       if index%20 == 0: 
-          print('epoch={}, gen_loss={}, disc_loss={}'.format(epoch, gen_loss, disc_loss))
+          print('epoch={}, gen_loss={:.6f}, disc_loss = {:.6f}, real_loss={:.6f}, fake_loss={:.6f}'.format(epoch, gen_loss, disc_loss, real_loss, fake_loss))
       
     if epoch:
       #display.clear_output(wait=True)
