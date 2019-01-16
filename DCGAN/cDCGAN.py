@@ -23,17 +23,23 @@ from plot import plot
 
 imagenames = ['circle', 'square']
 
+LABEL_NUM = len(imagenames)
+
 train_images = []
 train_labels = []
 
 for i in range(len(imagenames)):
     timg = np.load('data/' + imagenames[i] + '.npy')
-    tlabel = [i] * len(timg)
+    tlabel = [0] * LABEL_NUM
+    tlabel[i] = 1
+    tlabel = [tlabel] * len(timg)
     train_images.append(timg)
     train_labels += tlabel
 
 train_images = np.vstack(train_images)
 train_labels = np.array(train_labels)
+
+#train_labels = tf.one_hot(train_labels, LABEL_NUM, 1, 0)
 
 #train_images = np.load('data/' + 'cloud.npy')
 num_total = train_images.shape[0]
@@ -46,7 +52,7 @@ train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype('fl
 train_images = (train_images - 127.5) / 127.5
 
 BUFFER_SIZE = len(train_images)
-BATCH_SIZE = 256
+BATCH_SIZE = 16
 
 train_dataset = tf.data.Dataset.from_tensor_slices({'img': train_images, 'label': train_labels}).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
 
@@ -66,9 +72,12 @@ class Generator(tf.keras.Model):
     self.conv3 = tf.keras.layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False)
 
   def call(self, x, label, training=True):
-
+    print('xxx')
+    print(x)
+    print(label)
     #print(x.shape) 
     x = self.fc1(x) #(256, 100)
+
     label = self.fc_label(label)
     #print(x.shape)
     x = self.batchnorm1(x, training=training) 
@@ -198,20 +207,21 @@ def train(dataset, epochs, noise_dim):
     for onedata in dataset:
       images = onedata['img']
       labels = onedata['label']
-      '''
+      
       print(images.shape, labels.shape)
       for i in range(5):
         print(labels[i])
-      '''
+      
     
       # generating noise from a uniform distribution
       noise = tf.random_normal([BATCH_SIZE, noise_dim])
       
       with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-        generated_images = generator(noise, training=True)
+        print(labels)
+        generated_images = generator(noise, labels, training=True)
       
-        real_output = discriminator(images, training=True)
-        generated_output = discriminator(generated_images, training=True)
+        real_output = discriminator(images, labels, training=True)
+        generated_output = discriminator(generated_images, labels, training=True)
         
         gen_loss = generator_loss(generated_output)
         disc_loss = discriminator_loss(real_output, generated_output)
