@@ -3,3 +3,5 @@ imgs/*
 data
 training_checkpoints/*
 results/*
+*.gif
+*.gif.png
