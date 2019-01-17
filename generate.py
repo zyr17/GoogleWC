@@ -65,7 +65,7 @@ def generator_restore():
     return generator
 
 
-def generate_and_save_images(model, test_input):
+def generate_and_save_images(model, test_input, imgsavepath):
 
     predictions = model(test_input, training=False)
 
@@ -76,14 +76,15 @@ def generate_and_save_images(model, test_input):
         plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
         plt.axis('off')
         
-    plt.savefig('imgs/image_generate.png')
+    plt.savefig(imgsavepath)
     plt.show()
    
-if __name__=='__main__':
+def generate1(imgsavepath = 'imgs/image_generate.png')
     
     noise_dim = 100
     num_examples_to_generate = 16
     random_vector_for_generation = tf.random_normal([num_examples_to_generate,
                                                      noise_dim])
     generate_and_save_images(generator_restore(),
-                             random_vector_for_generation)
+                             random_vector_for_generation,
+                             imgsavepath)
