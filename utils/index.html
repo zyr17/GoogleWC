@@ -9,6 +9,7 @@
     <script>
         var canvas = document.getElementById("canvas");
         var ctx = canvas.getContext("2d");
+        ctx.lineWidth = 10;
         var oInput = document.getElementsByTagName("input");
         var button = document.getElementById("drawbutton");
 
@@ -28,8 +29,10 @@
         }
 
         button.onclick = function(){
-            var data = canvas.toDataURL()
-            console.log(data);
+            var data = canvas.toDataURL();
+            data = data.replace(/\+/g,"%2B");
+            data = data.replace(/\=/g,"&3D");
+            window.location.href = "draw?data=" + data;
         }
     </script>
 </html>
