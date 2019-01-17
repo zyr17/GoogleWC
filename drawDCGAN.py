@@ -47,20 +47,21 @@ def clearhalf(olddata, fillcolor = 0):
 imagenames = ['triangle']
 
 LABEL_NUM = len(imagenames)
-ONE_LABEL_SAMPLE = 100000 // LABEL_NUM
+ONE_LABEL_SAMPLE = 10000 // LABEL_NUM
 
 train_images = []
 train_parts = []
 
-random_part_for_generation = []
+random_img_for_generation = []
 
 for i in range(len(imagenames)):
-    tmpdata = np.load('data/' + imagenames[i] + '.npy'
-    timg = tmpdata[:ONE_LABEL_SAMPLE]
-    random_part_for_generation.append(tmpdata[:-100])
-    tpart = clearhalf(timg)
-    train_images.append(timg)
-    train_parts.append(tpart)
+  tmpdata = np.load('data/' + imagenames[i] + '.npy')
+  tmpdata = tmpdata.reshape(-1, 28, 28)
+  timg = tmpdata[:ONE_LABEL_SAMPLE]
+  random_img_for_generation.append(tmpdata[:-100])
+  tpart = clearhalf(timg)
+  train_images.append(timg)
+  train_parts.append(tpart)
 
 train_images = np.vstack(train_images)
 train_parts = np.vstack(train_parts)
@@ -210,9 +211,15 @@ num_examples_to_generate = 16
 # it will be easier to see the improvement of the gan.
 random_vector_for_generation = tf.random_normal([num_examples_to_generate,
                                                  noise_dim])
-for i in range(num_examples_to_generate):
-    random_part_for_generation[i] = random_part_for_generation[i][:num_examples_to_generate % LABEL_NUM]
-random_part_for_generation = np.vstack(random_part_for_generation)
+for i in range(LABEL_NUM):
+    random_img_for_generation[i] = random_img_for_generation[i][:num_examples_to_generate // LABEL_NUM]
+random_img_for_generation = np.vstack(random_img_for_generation)
+random_part_for_generation = clearhalf(random_img_for_generation)
+random_part_for_generation = random_img_for_generation
+random_part_for_generation = random_part_for_generation.reshape(-1, 28, 28, 1).astype('float32')
+random_part_for_generation = random_part_for_generation * 2 / 255 - 1
+
+#print(random_img_for_generation.shape, random_part_for_generation.shape)
 
 def generate_and_save_images(model, epoch, test_input, test_part):
   # make sure the training parameter is set to False because we
@@ -221,9 +228,11 @@ def generate_and_save_images(model, epoch, test_input, test_part):
 
   fig = plt.figure(figsize=(4,8))
   
+  #print(test_part.shape, predictions.shape)
+
   for i in range(predictions.shape[0]):
       plt.subplot(4, 8, i*2+1)
-      plt.imshow(test_part[i][i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+      plt.imshow(test_part[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
       plt.axis('off')
       plt.subplot(4, 8, i*2+2)
       plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
@@ -293,7 +302,7 @@ def train(dataset, epochs, noise_dim):
       generate_and_save_images(generator,
                                epoch + 1,
                                random_vector_for_generation,
-                               random_img_for_generation)
+                               random_part_for_generation)
       
     
     # saving (checkpoint) the model every 15 epochs
@@ -307,7 +316,7 @@ def train(dataset, epochs, noise_dim):
   generate_and_save_images(generator,
                            epochs,
                            random_vector_for_generation,
-                           random_img_for_generation)
+                           random_part_for_generation)
   
 train(train_dataset, EPOCHS, noise_dim)
 
