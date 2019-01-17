@@ -36,7 +36,10 @@ def clearhalf(olddata, fillcolor = 0):
                     left += one[i][j]
                 else:
                     right += one[i][j]
-        fillleft = left < right
+        if left == 0 and right == 0:
+                left = 1
+                right = 1
+        fillleft = random.random() < left / (left + right)
         for i in range(28):
             mid = 14 + (i - 14) * k
             for j in range(28):
@@ -44,7 +47,7 @@ def clearhalf(olddata, fillcolor = 0):
                     one[i][j] = fillcolor
     return data
 
-imagenames = ['triangle']
+imagenames = ['axe']
 
 LABEL_NUM = len(imagenames)
 ONE_LABEL_SAMPLE = 10000 // LABEL_NUM
@@ -206,7 +209,7 @@ checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
                                  generator=generator,
                                  discriminator=discriminator)
 
-EPOCHS = 150
+EPOCHS = 1500
 noise_dim = 100
 num_examples_to_generate = 16
 
@@ -244,7 +247,7 @@ def generate_and_save_images(model, epoch, test_input, test_part):
   plt.savefig('imgs/image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
 
-GEN_TIME = 1
+GEN_TIME = 2
 DISC_TIME = 1
    
 def train(dataset, epochs, noise_dim):  
