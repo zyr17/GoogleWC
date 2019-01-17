@@ -5,4 +5,4 @@ training_checkpoints/*
 results/*
 *.gif
 *.gif.png
-!examples
+!examples/*
