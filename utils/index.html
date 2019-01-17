@@ -1,0 +1,35 @@
+<html>
+    <head>
+
+    </head>
+    <body>
+        <button type="button" id="drawbutton">Get Result</button>
+        <canvas id="canvas" width="280" height="280" style="border: 3px solid brown">
+    </body>
+    <script>
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+        var oInput = document.getElementsByTagName("input");
+        var button = document.getElementById("drawbutton");
+
+        canvas.onmousedown = function(ev){
+            var ev = ev || event;
+            ctx.beginPath();
+            ctx.moveTo(ev.clientX-canvas.offsetLeft,ev.clientY-canvas.offsetTop);
+            document.onmousemove = function(ev){
+                var ev = ev || event;
+                ctx.lineTo(ev.clientX - canvas.offsetLeft,ev.clientY - canvas.offsetTop);
+                ctx.stroke();    
+            }
+            document.onmouseup = function(ev){
+                document.onmousemove = document.onmouseup = null;
+                ctx.closePath();
+            }
+        }
+
+        button.onclick = function(){
+            var data = canvas.toDataURL()
+            console.log(data);
+        }
+    </script>
+</html>

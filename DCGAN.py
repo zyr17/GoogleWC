@@ -120,7 +120,18 @@ checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
                                  discriminator_optimizer=discriminator_optimizer,
                                  generator=generator,
                                  discriminator=discriminator)
+#-------------
+# model restore
+if os.path.exists('training_checkpoints'):
+    
+    print('restoring model')
+    # restoring the latest checkpoint in checkpoint_dir
+    checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
+else:
+    print('first time to run')
+#-------------
+    
 EPOCHS = 150000
 noise_dim = 100
 num_examples_to_generate = 16
@@ -147,7 +158,13 @@ def generate_and_save_images(model, epoch, test_input):
    
 def train(dataset, epochs, noise_dim):  
     
-  gen_loss_record, disc_loss_record = [], []
+  if os.path.exists('gen_loss_record.txt'): ###
+      with open('gen_loss_record.txt','r') as f1:
+          gen_loss_record = eval(f1.read())
+      with open('disc_loss_record.txt','r') as f2:
+          disc_loss_record = eval(f2.read())
+  else: gen_loss_record, disc_loss_record = [], []
+  
   for epoch in range(epochs):
     start = time.time()
     
@@ -191,6 +208,10 @@ def train(dataset, epochs, noise_dim):
     # saving (checkpoint) the model every 15 epochs
     if (epoch + 1) % 15 == 0:
       checkpoint.save(file_prefix = checkpoint_prefix)
+      with open('gen_loss_record.txt','w') as f1: ###
+          f1.write(str(gen_loss_record))  
+      with open('disc_loss_record.txt','w') as f2:
+          f2.write(str(disc_loss_record)) 
     
     print ('Time taken for epoch {} is {} sec'.format(epoch,
                                                       time.time()-start))

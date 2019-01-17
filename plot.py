@@ -19,7 +19,7 @@ def plot(epoch, record, filename):
     plt.clf()
     plt.title('epoch:{} total:{}'.format(epoch, len(record)))
     #plt.plot(rewards)
-    plt.scatter([w+1 for w in range(len(record))], record)
+    plt.plot([w+1 for w in range(len(record))], record)
     plt.savefig("{}.png".format('imgs/' + filename))
     #plt.show()
 
