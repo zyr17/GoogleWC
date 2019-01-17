@@ -36,7 +36,10 @@ def clearhalf(olddata, fillcolor = 0):
                     left += one[i][j]
                 else:
                     right += one[i][j]
-        fillleft = left < right
+        if left == 0 and right == 0:
+                left = 1
+                right = 1
+        fillleft = random.random() < left / (left + right)
         for i in range(28):
             mid = 14 + (i - 14) * k
             for j in range(28):
@@ -44,7 +47,7 @@ def clearhalf(olddata, fillcolor = 0):
                     one[i][j] = fillcolor
     return data
 
-imagenames = ['triangle']
+imagenames = ['axe']
 
 LABEL_NUM = len(imagenames)
 ONE_LABEL_SAMPLE = 10000 // LABEL_NUM
@@ -58,7 +61,10 @@ for i in range(len(imagenames)):
   tmpdata = np.load('data/' + imagenames[i] + '.npy')
   tmpdata = tmpdata.reshape(-1, 28, 28)
   timg = tmpdata[:ONE_LABEL_SAMPLE]
-  random_img_for_generation.append(tmpdata[:-100])
+  ttail = list(tmpdata[-100:])
+  random.shuffle(ttail)
+  ttail = np.array(ttail)
+  random_img_for_generation.append(ttail)
   tpart = clearhalf(timg)
   train_images.append(timg)
   train_parts.append(tpart)
@@ -203,7 +209,7 @@ checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
                                  generator=generator,
                                  discriminator=discriminator)
 
-EPOCHS = 150000
+EPOCHS = 1500
 noise_dim = 100
 num_examples_to_generate = 16
 
@@ -215,7 +221,7 @@ for i in range(LABEL_NUM):
     random_img_for_generation[i] = random_img_for_generation[i][:num_examples_to_generate // LABEL_NUM]
 random_img_for_generation = np.vstack(random_img_for_generation)
 random_part_for_generation = clearhalf(random_img_for_generation)
-random_part_for_generation = random_img_for_generation
+#random_part_for_generation = random_img_for_generation
 random_part_for_generation = random_part_for_generation.reshape(-1, 28, 28, 1).astype('float32')
 random_part_for_generation = random_part_for_generation * 2 / 255 - 1
 
@@ -226,7 +232,7 @@ def generate_and_save_images(model, epoch, test_input, test_part):
   # don't want to train the batchnorm layer when doing inference.
   predictions = model(test_input, test_part, training=False)
 
-  fig = plt.figure(figsize=(4,8))
+  fig = plt.figure(figsize=(8,4))
   
   #print(test_part.shape, predictions.shape)
 
@@ -241,7 +247,7 @@ def generate_and_save_images(model, epoch, test_input, test_part):
   plt.savefig('imgs/image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
 
-GEN_TIME = 1
+GEN_TIME = 2
 DISC_TIME = 1
    
 def train(dataset, epochs, noise_dim):  
